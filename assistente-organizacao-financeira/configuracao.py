@@ -5,7 +5,7 @@ from ferramentas import (
     consultar_saldo, consultar_limite_cartao, buscar_boletos,
     listar_boletos_pendentes, gerar_plano_pagamentos, pagar_boleto,
 )
-
+from resposta_agente import RespostaAgente
 
 agent = Agent(
     name="Assistente Organização Financeiro",
@@ -54,8 +54,43 @@ agent = Agent(
         "Não solicite pagamentos por iniciativa própria. "
         "Nunca afirme que um pagamento foi realizado antes de receber "
         "a confirmação de execução da ferramenta. "
+
+        "Quando faltar uma informação necessária para atender "
+        "a solicitação do usuário, retorne uma resposta do tipo "
+        "'solicitacao_informacao', indicando em campo_pendente "
+        "qual informação precisa ser fornecida. "
+
+        "Para identificar um boleto não especificado, utilize "
+        "campo_pendente='identificacao_boleto'. "
+
+        "Quando houver informações suficientes para responder, "
+        "retorne o tipo 'resposta' e campo_pendente=null. "
+
+        "Solicitar informações não representa autorização para "
+        "executar pagamentos. Pagamentos continuam exigindo "
+        "aprovação humana por meio do HITL. "
+
+        "Use o tipo 'solicitacao_informacao' exclusivamente "
+        "quando faltar informação para identificar ou compreender "
+        "a solicitação do usuário. "
+
+        "Nunca utilize 'solicitacao_informacao' para pedir "
+        "autorização de pagamento. "
+
+        "Quando o usuário já tiver solicitado explicitamente "
+        "um pagamento e o boleto estiver identificado, "
+        "chame diretamente a ferramenta pagar_boleto. "
+
+        "A autorização será tratada exclusivamente pelo "
+        "mecanismo HITL da ferramenta, configurado com "
+        "needs_approval=True. "
+
+        "Uma resposta de esclarecimento do usuário não representa "
+        "uma nova autorização de pagamento. "
+
     ),
     model="gpt-6-luna",
+    output_type=RespostaAgente,
     tools=[
         consultar_saldo,
         consultar_limite_cartao,

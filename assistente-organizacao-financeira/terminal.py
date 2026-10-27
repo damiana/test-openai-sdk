@@ -48,7 +48,13 @@ def main():
                 result = resolver_aprovacoes(agent, result, contexto, session)
 
                 # 4. Exibe a resposta final
-                print(f"\nAgente: {result.final_output}")
+                # print(f"\nAgente: {result.final_output}")
+                resposta = result.final_output
+
+                if resposta.tipo == "solicitacao_informacao":
+                    print(f"\n[ELICITATION] Campo pendente: {resposta.campo_pendente}")
+
+                print(f"\nAgente: {resposta.mensagem}")
 
     except UserError as erro:
         if isinstance(erro.__cause__, LimiteBuscasExcedido):
