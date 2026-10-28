@@ -23,7 +23,7 @@ async def iniciar_pagamento():
     resultado = await Runner.run(
         agent,
         input="Pague meu boleto de internet.",
-        context=ContextoFinanceiro(),
+        context=ContextoFinanceiro(estado=estado_financeiro),
     )
 
     assert len(resultado.interruptions) == 1, (
@@ -61,7 +61,7 @@ async def testar_rejeicao():
     resultado = await Runner.run(
         agent,
         state,
-        context=ContextoFinanceiro(),
+        context=ContextoFinanceiro(estado=estado_financeiro),
     )
 
     assert not resultado.interruptions, (
@@ -83,12 +83,17 @@ async def testar_aprovacao():
     state = await iniciar_pagamento()
     interrupcao = state.get_interruptions()[0]
 
+    resposta = input("Autorizar o pagamento simulado de internet? (s/n): ").strip().lower()
+    if resposta != "s":
+        state.reject(interrupcao)
+        await Runner.run(agent, state, context=ContextoFinanceiro(estado=estado_financeiro))
+        raise AssertionError("Cenário de aprovação não autorizado pelo usuário.")
     state.approve(interrupcao)
 
     resultado = await Runner.run(
         agent,
         state,
-        context=ContextoFinanceiro(),
+        context=ContextoFinanceiro(estado=estado_financeiro),
     )
 
     assert not resultado.interruptions, (
@@ -108,13 +113,15 @@ async def testar_aprovacao():
     )
 
 
-async def main():
+async def main(incluir_aprovacao_manual=False):
     print("\n=== TESTES AUTOMATIZADOS DE HITL ===\n")
 
     testes = [
         ("Rejeição não altera saldo", testar_rejeicao),
-        ("Aprovação executa pagamento", testar_aprovacao),
     ]
+
+    if incluir_aprovacao_manual:
+        testes.append(("Aprovação humana executa pagamento", testar_aprovacao))
 
     aprovados = 0
 
@@ -135,4 +142,7 @@ async def main():
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--aprovacao-manual", action="store_true")
+    asyncio.run(main(parser.parse_args().aprovacao_manual))

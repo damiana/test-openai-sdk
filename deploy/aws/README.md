@@ -1,7 +1,8 @@
 # Demonstração na AWS — Lightsail Containers
 
-Preparação local, sem recursos AWS criados. Revisar e autorizar antes de executar
-qualquer comando de criação, push ou deployment abaixo.
+Guia de publicação no Lightsail. As mudanças da branch `refactor/sdk-openia`
+ainda não foram publicadas. Revisar e autorizar antes de executar qualquer comando
+de criação, push ou deployment abaixo.
 
 ## Configuração proposta
 
@@ -83,8 +84,8 @@ helper de deployment. Não imprime chaves nem acessa a AWS.
 ## Configuração pública em runtime
 
 O React lê `/config.js` antes de iniciar. No container, esse endpoint publica
-APENAS `chatkitApiURL` e `domainKey`. A chave OpenAI e o código de acesso não fazem
-parte da imagem ou do frontend. Não é necessário reconstruir a imagem depois de
+APENAS `chatkitApiURL` e `domainKey`. A chave OpenAI não faz parte da imagem
+ou do frontend. Não é necessário reconstruir a imagem depois de
 obter o hostname ou registrar o domínio do ChatKit.
 
 Variáveis do backend:
@@ -92,7 +93,6 @@ Variáveis do backend:
 | Variável | Valor |
 | --- | --- |
 | `OPENAI_API_KEY` | Chave privada, somente no backend |
-| `DEMO_ACCESS_CODE` | Código privado compartilhado com participantes |
 | `CHATKIT_DOMAIN_KEY` | Chave pública do domínio cadastrado no ChatKit |
 | `PUBLIC_CHATKIT_API_URL` | `/chatkit` |
 | `CORS_ORIGINS` | Origem HTTPS retornada pelo Lightsail |
@@ -110,8 +110,7 @@ PYTHONPATH=assistente-organizacao-financeira .venv/bin/python -m unittest discov
 PYTHONPATH=assistente-organizacao-financeira:test-ui .venv/bin/python -m unittest discover -s test-ui/tests -v
 ```
 
-O código de acesso e a chave precisam estar no ambiente para testar o container
-em modo produção. Não use valores reais no comando `docker run` nem argumentos
+A chave OpenAI precisa estar no ambiente para testar o container em modo produção. Não use valores reais no comando `docker run` nem argumentos
 visíveis: monte um arquivo privado ignorado `.deploy/container.env` e passe
 `--env-file .deploy/container.env`. Ele deve ter permissões 600. Não há montagem de
 arquivos de credenciais AWS dentro do container.
@@ -119,20 +118,11 @@ arquivos de credenciais AWS dentro do container.
 Para smoke test sem LLM: usar `APP_ENV=development` no container e `local-dev` no
 ChatKit, somente na interface local `127.0.0.1`. Essa configuração não é publicável.
 
-## Resultado da preparação local
+## Resultados de validação
 
-- Build Linux amd64 concluído com as dependências fixadas, em ambiente limpo.
-- Frontend Vite compilado dentro do estágio Node do Docker.
-- Os testes de publicação cobrem isolamento e protocolo dentro do container Linux, sem rede/modelos:
-  isolamento, autorização, concorrência, expiração, SSE, widgets, rejeição HITL e
-  configuração pública sem segredos.
-- Quatro testes de refatoração passaram no ambiente local.
-- Smoke test HTTP local: `/`, `/health`, `/config.js`, criação de sessão e
-  `threads.list` do ChatKit responderam corretamente.
-- Container iniciado com limite de 1 GB e 0,25 CPU e usuário sem privilégios.
-- Nenhum segredo real foi fornecido ao build ou aos testes. Nenhum pagamento
-  recebeu aprovação automática. Validações reais com OpenAI e HTTPS/SSE do
-  Lightsail permanecem pendentes da publicação e das credenciais.
+Consulte o [guia de arquitetura](../../docs/arquitetura.md) para entender os fluxos e as
+limitações do projeto. A validação local não substitui a validação pública após
+um novo deployment.
 
 ## Criar o serviço — APÓS aprovação
 
@@ -173,8 +163,7 @@ imagem pública que possa expor os fontes. Preparar o JSON privado local:
 ```
 
 O helper solicita a chave OpenAI com entrada oculta (ou usa a variável de ambiente),
-gera um código de acesso e grava `.deploy/aws-deployment.json` e
-`.deploy/aws-demo-access-code.txt` com permissões 600. Ele não chama AWS nem publica.
+grava `.deploy/aws-deployment.json` com permissão 600. Ele não chama AWS nem publica.
 Não sobrescreve arquivos existentes. Não enviar esses arquivos ao Git ou ao chat.
 
 ## Publicar — APÓS aprovação
@@ -192,7 +181,8 @@ filtragem se a saída for compartilhada. O endpoint público aponta para a porta
 - `/health` retorna 200 e `/` mostra o frontend em HTTPS.
 - `/config.js` contém somente os dois parâmetros públicos.
 - Não há mixed content, erro de domínio ChatKit ou chave OpenAI no bundle.
-- O código de acesso é exigido; duas sessões têm saldo e conversas independentes.
+- A sessão inicia sem código de acesso; duas sessões têm saldo e conversas independentes.
+- A aplicação permite acesso anônimo: qualquer visitante pode consumir a API dentro dos limites locais.
 - Saldo, boletos e planejamento exibem os widgets corretos.
 - Pagamento interrompe antes da execução; rejeição não altera saldo.
 - Aprovação é feita manualmente pela titular no widget; reenvio não duplica pagamento.

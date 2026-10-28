@@ -68,7 +68,7 @@ class RefatoracaoTests(unittest.TestCase):
     def test_hitl_interrompe_e_rejeita_com_sessao(self):
         # O agente de produção permanece com seu modelo configurado.
         agente_local = agent.clone(model=ModeloPagamento())
-        contexto = ContextoFinanceiro()
+        contexto = ContextoFinanceiro(estado=estado_financeiro)
         with tempfile.TemporaryDirectory() as tmp:
             session = SQLiteSession('teste-hitl', str(Path(tmp) / 'sessao.db'))
             try:

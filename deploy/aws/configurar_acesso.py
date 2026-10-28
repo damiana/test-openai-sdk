@@ -3,7 +3,6 @@ import getpass
 import json
 import os
 from pathlib import Path
-import secrets
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -15,7 +14,7 @@ def main():
     chave = os.getenv('OPENAI_API_KEY') or getpass.getpass('Chave secreta OpenAI (entrada oculta): ')
     if not chave.strip():
         raise SystemExit('Chave vazia. Nenhum arquivo criado.')
-    dados = {'OPENAI_API_KEY': chave.strip(), 'DEMO_ACCESS_CODE': secrets.token_urlsafe(24)}
+    dados = {'OPENAI_API_KEY': chave.strip()}
     destino.parent.mkdir(mode=0o700, exist_ok=True)
     fd = os.open(destino, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
     with os.fdopen(fd, 'w') as arquivo:

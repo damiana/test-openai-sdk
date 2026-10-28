@@ -4,7 +4,6 @@ import getpass
 import json
 import os
 from pathlib import Path
-import secrets
 from urllib.parse import urlparse
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -24,15 +23,13 @@ def main():
     if not args.image.startswith(':'):
         parser.error('Use a referência privada do Lightsail retornada pelo push-container-image.')
     output = ROOT / '.deploy' / 'aws-deployment.json'
-    code_path = ROOT / '.deploy' / 'aws-demo-access-code.txt'
-    if output.exists() or code_path.exists():
+    if output.exists():
         raise SystemExit('Arquivos privados já existem. Revise-os antes de substituir um deployment.')
     secrets_path = ROOT / '.deploy' / 'aws-secrets.json'
     private = json.loads(secrets_path.read_text()) if secrets_path.is_file() else {}
     key = private.get('OPENAI_API_KEY') or os.getenv('OPENAI_API_KEY') or getpass.getpass('Chave OpenAI (entrada oculta): ')
     if not key.strip():
         raise SystemExit('Chave não informada. Nenhum arquivo criado.')
-    code = private.get('DEMO_ACCESS_CODE') or secrets.token_urlsafe(24)
     origin = f'{url.scheme}://{url.netloc}'
     data = {
         'containers': {'finai': {
@@ -41,7 +38,7 @@ def main():
             'environment': {
                 'APP_ENV': 'production', 'CORS_ORIGINS': origin,
                 'PUBLIC_CHATKIT_API_URL': '/chatkit', 'CHATKIT_DOMAIN_KEY': args.domain_key,
-                'OPENAI_API_KEY': key.strip(), 'DEMO_ACCESS_CODE': code,
+                'OPENAI_API_KEY': key.strip(),
             },
         }},
         'publicEndpoint': {'containerName': 'finai', 'containerPort': 8000, 'healthCheck': {
@@ -50,11 +47,10 @@ def main():
         }},
     }
     output.parent.mkdir(mode=0o700, exist_ok=True)
-    for path, text in [(output, json.dumps(data, indent=2) + '\n'), (code_path, code + '\n')]:
-        fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
-        with os.fdopen(fd, 'w') as file:
-            file.write(text)
-    print('Preparados .deploy/aws-deployment.json e .deploy/aws-demo-access-code.txt, com permissão 600.')
+    fd = os.open(output, os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w') as file:
+        file.write(json.dumps(data, indent=2) + '\n')
+    print('Preparado .deploy/aws-deployment.json, com permissão 600.')
     print('Contêm segredos. Não enviar ao Git ou ao chat. Nenhum recurso foi criado.')
 
 

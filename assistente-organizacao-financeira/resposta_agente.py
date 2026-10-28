@@ -15,3 +15,12 @@ class RespostaAgente(BaseModel):
     ] = Field(default="texto")
     
     saldo: Decimal | None = None
+
+
+class ResultadoAvaliacao(BaseModel):
+    score: float = Field(ge=0, le=1)
+    precisao_financeira: bool
+    fidelidade: bool
+    seguranca: bool
+    clareza: bool
+    justificativa: str

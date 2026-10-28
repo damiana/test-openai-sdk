@@ -14,11 +14,10 @@ const productionConfigured = !import.meta.env.PROD || (
   (apiURL.startsWith("https://") || localPreview) && (domainKey !== "local-dev" || localPreview)
 );
 
-async function solicitarSessao(code, signal) {
+async function solicitarSessao(signal) {
   const response = await fetch(sessionURL, {
-    method: "POST", headers: { "X-Demo-Code": code }, credentials: "omit", signal,
+    method: "POST", credentials: "omit", signal,
   });
-  if (response.status === 401) throw new Error("Informe o código de acesso fornecido para a demonstração.");
   if (!response.ok) throw new Error("Não foi possível iniciar. Tente novamente mais tarde.");
   return (await response.json()).token;
 }
@@ -39,17 +38,15 @@ function Conversa({ token, onSessionEnded }) {
 
 export default function App() {
   const [token, setToken] = useState(null);
-  const [codigo, setCodigo] = useState("");
   const [aviso, setAviso] = useState(productionConfigured ? "" : "Configure a URL HTTPS do backend e o domínio ChatKit antes de publicar.");
   const [carregando, setCarregando] = useState(productionConfigured);
 
-  const iniciar = useCallback(async (code = "", signal) => {
+  const iniciar = useCallback(async (signal) => {
     if (!productionConfigured) return;
     try {
-      const newToken = await solicitarSessao(code, signal);
+      const newToken = await solicitarSessao(signal);
       if (signal?.aborted) return;
       setToken(newToken);
-      setCodigo("");
       setAviso("");
     } catch (error) {
       if (error.name !== "AbortError") setAviso(error.message);
@@ -61,9 +58,9 @@ export default function App() {
   useEffect(() => {
     if (!productionConfigured) return;
     const controller = new AbortController();
-    solicitarSessao("", controller.signal)
+    solicitarSessao(controller.signal)
       .then((newToken) => { if (!controller.signal.aborted) setToken(newToken); })
-      .catch((error) => { if (error.name !== "AbortError") setAviso(error.message); })
+      .catch((error) => { if (!controller.signal.aborted) setAviso(error.message); })
       .finally(() => { if (!controller.signal.aborted) setCarregando(false); });
     return () => controller.abort();
   }, []);
@@ -85,13 +82,10 @@ export default function App() {
             </div>
           </div>
           {token ? <Conversa token={token} onSessionEnded={encerrar} /> : (
-            <form className="session-entry" onSubmit={(event) => { event.preventDefault(); setCarregando(true); iniciar(codigo); }}>
+            <form className="session-entry" onSubmit={(event) => { event.preventDefault(); setCarregando(true); iniciar(); }}>
               <h2>Assistente Financeiro Inteligente</h2>
               <p>Consulte seus boletos e organize pagamentos em um ambiente de demonstração.</p>
               <p role="status">{aviso || "Preparando sua sessão…"}</p>
-              <label htmlFor="demo-code">Código de acesso</label>
-              <input id="demo-code" type="password" value={codigo}
-                onChange={(event) => setCodigo(event.target.value)} autoComplete="off" />
               <button type="submit" disabled={carregando || !productionConfigured}>
                 {carregando ? "Conectando…" : "Iniciar demonstração"}
               </button>

@@ -2,7 +2,6 @@
 from contextlib import asynccontextmanager
 import json
 import os
-import secrets
 
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
@@ -15,7 +14,6 @@ from agents import trace
 
 # O servidor configura o caminho dos módulos financeiros compartilhados com a CLI.
 from servidor_chatkit import servidor
-from financeiro import usar_estado_financeiro
 from sessoes_web import SessoesWeb
 
 origens = [value.strip() for value in os.getenv("CORS_ORIGINS", "http://localhost:5173").split(",") if value.strip()]
@@ -24,8 +22,8 @@ origens = [value.strip() for value in os.getenv("CORS_ORIGINS", "http://localhos
 @asynccontextmanager
 async def lifespan(app):
     if os.getenv("APP_ENV") == "production":
-        if not os.getenv("OPENAI_API_KEY") or not os.getenv("DEMO_ACCESS_CODE"):
-            raise RuntimeError("Configure OPENAI_API_KEY e DEMO_ACCESS_CODE no backend.")
+        if not os.getenv("OPENAI_API_KEY"):
+            raise RuntimeError("Configure OPENAI_API_KEY no backend.")
         if not origens or any(not origin.startswith("https://") or "*" in origin for origin in origens):
             raise RuntimeError("CORS_ORIGINS deve conter somente as origens HTTPS autorizadas.")
     yield
@@ -52,10 +50,7 @@ async def configuracao_publica():
 
 
 @app.post("/session")
-async def criar_sessao(request: Request):
-    codigo = os.getenv("DEMO_ACCESS_CODE", "")
-    if codigo and not secrets.compare_digest(request.headers.get("X-Demo-Code", "").encode(), codigo.encode()):
-        raise HTTPException(401, "Informe o código de acesso da demonstração.")
+async def criar_sessao():
     token = sessoes.criar()
     return Response(json.dumps({"token": token}), media_type="application/json", headers={"Cache-Control": "no-store"})
 
@@ -78,18 +73,17 @@ async def chatkit_endpoint(request: Request):
     if sessao.lock.locked():
         raise HTTPException(409, "Aguarde a solicitação em andamento.")
     await sessao.lock.acquire()
-    context = {"user_id": sessao.user_id, "on_delete_thread": servidor.remover_thread}
+    context = {"user_id": sessao.user_id, "estado_financeiro": sessao.estado,
+               "on_delete_thread": servidor.remover_thread}
     try:
         thread_id = payload.get("params", {}).get("thread_id") if isinstance(payload.get("params", {}), dict) else None
         if thread_id:
             servidor.store.autorizar_thread(thread_id, context)
-        with usar_estado_financeiro(sessao.estado):
-            resultado = await servidor.process(bytes(body), context)
+        resultado = await servidor.process(bytes(body), context)
         if isinstance(resultado, StreamingResult):
             async def eventos():
                 try:
-                    # A iteração SSE acontece em outra etapa: mantém o escopo até o último evento.
-                    with usar_estado_financeiro(sessao.estado), trace("Assistente Financeiro - ChatKit"):
+                    with trace("Assistente Financeiro - ChatKit"):
                         async for evento in resultado:
                             yield evento
                 finally:
