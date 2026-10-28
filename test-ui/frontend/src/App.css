@@ -115,3 +115,25 @@ body,
     min-height: 420px;
   }
 }
+
+.session-entry {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  max-width: 460px;
+  min-height: 420px;
+  margin: 0 auto;
+  padding: 48px 24px;
+}
+
+.session-entry h2 { margin: 0; font-size: 24px; }
+.session-entry p { margin: 0; line-height: 1.6; color: #57667c; }
+.session-entry label { margin-top: 12px; font-size: 14px; }
+.session-entry input {
+  padding: 12px; border: 1px solid #c5cfdd; border-radius: 10px; font: inherit;
+}
+.session-entry button {
+  padding: 13px; border: 0; border-radius: 10px;
+  background: #2168d6; color: white; font: inherit; cursor: pointer;
+}
+.session-entry button:disabled { opacity: .6; cursor: wait; }

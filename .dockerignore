@@ -1,0 +1,35 @@
+# Somente os arquivos explicitamente necessários entram no contexto de build.
+**
+!requirements.txt
+!assistente-organizacao-financeira/
+!assistente-organizacao-financeira/*.py
+!test-ui/
+!test-ui/*.py
+!test-ui/startup.sh
+!test-ui/widgets/
+!test-ui/widgets/*.widget
+!test-ui/frontend/
+!test-ui/frontend/package.json
+!test-ui/frontend/package-lock.json
+!test-ui/frontend/vite.config.js
+!test-ui/frontend/index.html
+!test-ui/frontend/src/
+!test-ui/frontend/src/**
+!test-ui/frontend/public/
+!test-ui/frontend/public/**
+!deploy/
+!deploy/aws/
+!deploy/aws/Dockerfile
+# Exclusões finais prevalecem mesmo dentro de diretórios permitidos.
+**/node_modules
+**/dist
+**/__pycache__
+**/.env
+**/.env.*
+**/*.db
+**/*.db-shm
+**/*.db-wal
+**/.git
+**/.aws
+**/.azure
+**/.DS_Store

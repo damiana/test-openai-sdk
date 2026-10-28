@@ -27,7 +27,7 @@ class ModeloPagamento(Model):
         if any(isinstance(item, dict) and item.get('type') == 'function_call_output' for item in items):
             output = [ResponseOutputMessage(
                 id='msg_local', type='message', role='assistant', status='completed',
-                content=[{'type': 'output_text', 'text': 'Pagamento rejeitado.', 'annotations': []}],
+                content=[{'type': 'output_text', 'text': '{"tipo":"resposta","mensagem":"Pagamento rejeitado.","campo_pendente":null,"visualizacao":"texto","saldo":null}', 'annotations': []}],
             )]
         else:
             output = [ResponseFunctionToolCall(

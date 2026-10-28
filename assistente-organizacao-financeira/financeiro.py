@@ -1,5 +1,7 @@
 """Estado e regras financeiras simuladas, independentes do SDK."""
 
+from contextlib import contextmanager
+from contextvars import ContextVar
 from decimal import Decimal
 
 
@@ -39,11 +41,11 @@ def planejar_pagamentos(saldo: float, boletos: list[dict]) -> dict:
 
 
 def obter_saldo() -> float:
-    return float(estado_financeiro["saldo"])
+    return float(obter_estado_financeiro()["saldo"])
 
 
-def obter_boletos() -> list[dict]:
-    boletos = [
+def _boletos_simulados() -> list[dict]:
+    return [
         {"id": "BOL-001", "descricao": "Energia elétrica",
          "valor": 280.00, "vencimento": "2026-10-26"},
         {"id": "BOL-002", "descricao": "Internet",
@@ -52,20 +54,48 @@ def obter_boletos() -> list[dict]:
          "valor": 92.50, "vencimento": "2026-10-27"}
     ]
 
+
+def obter_boleto(boleto_id: str) -> dict | None:
+    """Metadados da simulação, inclusive após pagamento, para a interface HITL."""
+    return next((b for b in _boletos_simulados() if b["id"] == boleto_id), None)
+
+
+def obter_boletos() -> list[dict]:
+    estado_financeiro = obter_estado_financeiro()
+    boletos = _boletos_simulados()
     return [
         b for b in boletos
         if b["id"] not in estado_financeiro["pagamentos_realizados"]
     ]
 
 
-estado_financeiro = {
-    "saldo": Decimal("350.00"),
-    "pagamentos_realizados": set()
-}
+def criar_estado_financeiro() -> dict:
+    """Cada sessão começa com os mesmos valores da simulação original."""
+    return {"saldo": Decimal("350.00"), "pagamentos_realizados": set()}
 
+
+# Compatibilidade com o terminal e avaliações existentes.
+estado_financeiro = criar_estado_financeiro()
+_estado_sessao = ContextVar("estado_financeiro_sessao", default=None)
+
+
+def obter_estado_financeiro() -> dict:
+    estado = _estado_sessao.get()
+    return estado if estado is not None else estado_financeiro
+
+
+@contextmanager
+def usar_estado_financeiro(estado: dict):
+    """Isola requisições concorrentes, inclusive tools executadas em threads."""
+    token = _estado_sessao.set(estado)
+    try:
+        yield
+    finally:
+        _estado_sessao.reset(token)
 
 
 def executar_pagamento_simulado(boleto_id: str) -> dict:
+    estado_financeiro = obter_estado_financeiro()
     if boleto_id in estado_financeiro["pagamentos_realizados"]:
         return {
             "status": "ERRO",
