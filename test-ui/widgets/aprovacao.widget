@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "name": "aprovacao_pagamento",
+  "template": "{\"type\":\"Card\",\"children\":[{\"type\":\"Title\",\"value\":\"Confirmar pagamento\"},{\"type\":\"Text\",\"value\":\"{{ descricao }}\"},{\"type\":\"Title\",\"value\":\"{{ valor }}\"},{\"type\":\"Text\",\"value\":\"Vencimento: {{ vencimento }}\"},{\"type\":\"Caption\",\"value\":\"Identificador: {{ boleto_id }}\"},{\"type\":\"Button\",\"label\":\"Aprovar pagamento\",\"style\":\"primary\",\"onClickAction\":{\"type\":\"aprovar_pagamento\",\"handler\":\"server\"}},{\"type\":\"Button\",\"label\":\"Rejeitar pagamento\",\"style\":\"secondary\",\"onClickAction\":{\"type\":\"rejeitar_pagamento\",\"handler\":\"server\"}}]}"
+}

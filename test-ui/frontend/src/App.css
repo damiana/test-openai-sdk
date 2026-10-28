@@ -1,0 +1,117 @@
+
+:root {
+  font-family: Inter, -apple-system, BlinkMacSystemFont,
+    "Segoe UI", sans-serif;
+  color: #17253d;
+  background: #f4f7fc;
+  color-scheme: light;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100%;
+  background: #f4f7fc;
+}
+
+.app {
+  min-height: 100dvh;
+  background: #f4f7fc;
+  color: #17253d;
+}
+
+.app-content {
+  width: min(100%, 1200px);
+  margin: 0 auto;
+  padding: 28px 24px 16px;
+}
+
+.chat-container {
+  background: #fff;
+  border: 1px solid #e5ebf3;
+  border-radius: 22px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgba(29, 55, 95, 0.06);
+}
+
+.chat-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 18px 24px;
+  background: #fff;
+  border-bottom: 1px solid #edf1f6;
+}
+
+.assistant-avatar {
+  flex-shrink: 0;
+  width: 44px;
+  height: 44px;
+  display: grid;
+  place-items: center;
+  border-radius: 14px;
+  background: #eaf2ff;
+  color: #2168d6;
+  font-size: 24px;
+}
+
+.chat-header > div:last-child {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.chat-header strong {
+  display: block;
+  font-size: 16px;
+  font-weight: 650;
+  color: #17253d;
+}
+
+.chat-header span {
+  display: block;
+  font-size: 13px;
+  color: #8490a1;
+}
+
+.chatkit {
+  display: block;
+  width: 100%;
+  height: calc(100dvh - 205px);
+  min-height: 560px;
+  background: #fff;
+  color-scheme: light;
+}
+
+.app-footer {
+  padding: 18px 0;
+  text-align: center;
+  color: #8b97a9;
+  font-size: 12px;
+}
+
+@media (max-width: 640px) {
+  .app-content {
+    padding: 12px 10px;
+  }
+
+  .chat-container {
+    border-radius: 16px;
+  }
+
+  .chat-header {
+    padding: 14px 16px;
+  }
+
+  .chatkit {
+    height: calc(100dvh - 165px);
+    min-height: 420px;
+  }
+}

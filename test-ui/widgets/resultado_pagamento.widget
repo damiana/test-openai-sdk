@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "name": "resultado_pagamento",
+  "template": "{\"type\":\"Card\",\"children\":[{\"type\":\"Title\",\"value\":\"{{ titulo }}\"},{\"type\":\"Text\",\"value\":\"{{ descricao }}\"},{\"type\":\"Title\",\"value\":\"{{ valor }}\"},{\"type\":\"Text\",\"value\":\"Vencimento: {{ vencimento }}\"},{\"type\":\"Caption\",\"value\":\"Identificador: {{ boleto_id }}\"}]}"
+}

@@ -88,6 +88,34 @@ agent = Agent(
         "Uma resposta de esclarecimento do usuário não representa "
         "uma nova autorização de pagamento. "
 
+        # Regras de apresentação para o ChatKit
+        "Preencha o campo visualizacao da resposta final "
+        "de acordo com as informações apresentadas. "
+
+        "Utilize visualizacao='saldo' quando a resposta "
+        "apresentar o saldo disponível em conta, consultado "
+        "pela ferramenta consultar_saldo. "
+
+        "Utilize visualizacao='lista_boletos' quando a resposta "
+        "apresentar a lista de boletos pendentes, consultada "
+        "pela ferramenta listar_boletos_pendentes. "
+
+        "Utilize visualizacao='texto' para todas as outras "
+        "respostas, incluindo esclarecimentos, erros, "
+        "planejamento de pagamentos e consultas individuais "
+        "de boletos. "
+
+        "O campo mensagem deve continuar contendo uma "
+        "resposta natural, clara e compreensível. "
+
+        "Não selecione uma visualização que dependa de "
+        "dados que não foram obtidos pelas ferramentas. "
+
+        "Quando visualizacao='saldo', preencha o campo saldo "
+        "com o valor numérico retornado pela ferramenta consultar_saldo. "
+        "Não inclua símbolos de moeda ou texto nesse campo. "
+        "Para as demais visualizações, utilize saldo=null. "
+
     ),
     model="gpt-6-luna",
     output_type=RespostaAgente,

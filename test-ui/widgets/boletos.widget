@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "name": "boletos_pendentes",
+  "template": "{\"type\":\"Card\",\"children\":{{ children }}}"
+}

@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "name": "saldo_disponivel",
+  "template": "{\"type\":\"Card\",\"children\":[{\"type\":\"Text\",\"value\":\"Saldo disponível\",\"color\":\"secondary\"},{\"type\":\"Title\",\"value\":\"{{ saldo }}\",\"size\":\"2xl\"}]}"
+}

@@ -64,11 +64,14 @@ estado_financeiro = {
 }
 
 
-def executar_pagamento_simulado(boleto_id: str) -> dict:
 
+def executar_pagamento_simulado(boleto_id: str) -> dict:
     if boleto_id in estado_financeiro["pagamentos_realizados"]:
-        return {"status": "ERRO", "motivo": "Boleto já pago"}
-    
+        return {
+            "status": "ERRO",
+            "motivo": "Boleto já pago"
+        }
+
     boletos = obter_boletos()
 
     boleto = next(
@@ -76,15 +79,20 @@ def executar_pagamento_simulado(boleto_id: str) -> dict:
         None
     )
 
-    # if boleto is None:
-    #     return {"status": "ERRO", "motivo": "Boleto inexistente"}
-
-    if Decimal(str(boleto["valor"])) > Decimal(str(obter_saldo())):
-        return {"status": "ERRO", "motivo": "Saldo insuficiente"}
-
-    #pagamentos_realizados.add(boleto_id)
+    if boleto is None:
+        return {
+            "status": "ERRO",
+            "motivo": "Boleto inexistente"
+        }
 
     valor = Decimal(str(boleto["valor"]))
+    saldo = Decimal(str(obter_saldo()))
+
+    if valor > saldo:
+        return {
+            "status": "ERRO",
+            "motivo": "Saldo insuficiente"
+        }
 
     estado_financeiro["saldo"] -= valor
     estado_financeiro["pagamentos_realizados"].add(boleto_id)
@@ -95,5 +103,6 @@ def executar_pagamento_simulado(boleto_id: str) -> dict:
         "valor": str(valor),
         "saldo_restante": str(estado_financeiro["saldo"])
     }
+
 
 

@@ -93,3 +93,10 @@ Agora experimentamos três níveis de avaliação:
 3. Semântico: a resposta representa corretamente os dados e comunica o resultado de maneira adequada?
 
 --
+
+O SDK utilizará o modelo Pydantic para validar a estrutura da resposta final.
+
+--
+
+chatkit server
+chatkit
