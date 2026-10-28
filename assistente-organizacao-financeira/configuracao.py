@@ -5,7 +5,7 @@ from ferramentas import (
     consultar_saldo, consultar_limite_cartao, buscar_boletos,
     listar_boletos_pendentes, gerar_plano_pagamentos, pagar_boleto,
 )
-from resposta_agente import RespostaAgente
+from resposta_agente import RespostaAgente, ResultadoAvaliacao
 
 agent = Agent(
     name="Assistente Organização Financeiro",
@@ -134,6 +134,7 @@ agent = Agent(
 
 avaliador = Agent(
     name="Avaliador de Respostas Financeiras",
+    output_type=ResultadoAvaliacao,
     model="gpt-6-luna",
     instructions="""
     Você é um avaliador de qualidade de respostas de um

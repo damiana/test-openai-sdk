@@ -1,8 +1,20 @@
 """Estado e regras financeiras simuladas, independentes do SDK."""
 
-from contextlib import contextmanager
-from contextvars import ContextVar
 from decimal import Decimal
+from typing import TypedDict
+
+
+class Boleto(TypedDict):
+    id: str
+    descricao: str
+    valor: float
+    vencimento: str
+
+
+class EstadoFinanceiro(TypedDict):
+    saldo: Decimal
+    pagamentos_realizados: set[str]
+
 
 
 def planejar_pagamentos(saldo: float, boletos: list[dict]) -> dict:
@@ -40,11 +52,11 @@ def planejar_pagamentos(saldo: float, boletos: list[dict]) -> dict:
     }
 
 
-def obter_saldo() -> float:
-    return float(obter_estado_financeiro()["saldo"])
+def obter_saldo(estado: EstadoFinanceiro | None = None) -> float:
+    return float((estado if estado is not None else estado_financeiro)["saldo"])
 
 
-def _boletos_simulados() -> list[dict]:
+def _boletos_simulados() -> list[Boleto]:
     return [
         {"id": "BOL-001", "descricao": "Energia elétrica",
          "valor": 280.00, "vencimento": "2026-10-26"},
@@ -55,54 +67,40 @@ def _boletos_simulados() -> list[dict]:
     ]
 
 
-def obter_boleto(boleto_id: str) -> dict | None:
+def obter_boleto(boleto_id: str) -> Boleto | None:
     """Metadados da simulação, inclusive após pagamento, para a interface HITL."""
     return next((b for b in _boletos_simulados() if b["id"] == boleto_id), None)
 
 
-def obter_boletos() -> list[dict]:
-    estado_financeiro = obter_estado_financeiro()
+def obter_boletos(estado: EstadoFinanceiro | None = None) -> list[Boleto]:
+    estado_atual = estado if estado is not None else estado_financeiro
     boletos = _boletos_simulados()
     return [
         b for b in boletos
-        if b["id"] not in estado_financeiro["pagamentos_realizados"]
+        if b["id"] not in estado_atual["pagamentos_realizados"]
     ]
 
 
-def criar_estado_financeiro() -> dict:
+def criar_estado_financeiro() -> EstadoFinanceiro:
     """Cada sessão começa com os mesmos valores da simulação original."""
     return {"saldo": Decimal("350.00"), "pagamentos_realizados": set()}
 
 
-# Compatibilidade com o terminal e avaliações existentes.
+# Compatibilidade com chamadas antigas e avaliações existentes.
 estado_financeiro = criar_estado_financeiro()
-_estado_sessao = ContextVar("estado_financeiro_sessao", default=None)
 
 
-def obter_estado_financeiro() -> dict:
-    estado = _estado_sessao.get()
-    return estado if estado is not None else estado_financeiro
-
-
-@contextmanager
-def usar_estado_financeiro(estado: dict):
-    """Isola requisições concorrentes, inclusive tools executadas em threads."""
-    token = _estado_sessao.set(estado)
-    try:
-        yield
-    finally:
-        _estado_sessao.reset(token)
-
-
-def executar_pagamento_simulado(boleto_id: str) -> dict:
-    estado_financeiro = obter_estado_financeiro()
-    if boleto_id in estado_financeiro["pagamentos_realizados"]:
+def executar_pagamento_simulado(
+    boleto_id: str, estado: EstadoFinanceiro | None = None
+) -> dict:
+    estado_atual = estado if estado is not None else estado_financeiro
+    if boleto_id in estado_atual["pagamentos_realizados"]:
         return {
             "status": "ERRO",
             "motivo": "Boleto já pago"
         }
 
-    boletos = obter_boletos()
+    boletos = obter_boletos(estado_atual)
 
     boleto = next(
         (b for b in boletos if b["id"] == boleto_id),
@@ -116,7 +114,7 @@ def executar_pagamento_simulado(boleto_id: str) -> dict:
         }
 
     valor = Decimal(str(boleto["valor"]))
-    saldo = Decimal(str(obter_saldo()))
+    saldo = estado_atual["saldo"]
 
     if valor > saldo:
         return {
@@ -124,14 +122,14 @@ def executar_pagamento_simulado(boleto_id: str) -> dict:
             "motivo": "Saldo insuficiente"
         }
 
-    estado_financeiro["saldo"] -= valor
-    estado_financeiro["pagamentos_realizados"].add(boleto_id)
+    estado_atual["saldo"] -= valor
+    estado_atual["pagamentos_realizados"].add(boleto_id)
 
     return {
         "status": "PAGO",
         "boleto_id": boleto_id,
         "valor": str(valor),
-        "saldo_restante": str(estado_financeiro["saldo"])
+        "saldo_restante": str(estado_atual["saldo"])
     }
 
 

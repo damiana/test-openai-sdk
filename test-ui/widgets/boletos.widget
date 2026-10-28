@@ -1,5 +1,5 @@
 {
   "version": "1.0",
   "name": "boletos_pendentes",
-  "template": "{\"type\":\"Card\",\"children\":{{ children }}}"
+  "template": "{\n \"type\":\"Card\",\"children\":[\n  {\"type\":\"Title\",\"value\":\"Seus boletos pendentes\"},\n  {\"type\":\"Text\",\"value\":\"{{ boletos|length }} compromisso(s) encontrado(s)\"},\n  {\"type\":\"Divider\"},\n  {% for boleto in boletos %}\n  {\"type\":\"Row\",\"children\":[\n   {\"type\":\"Col\",\"children\":[\n    {\"type\":\"Text\",\"value\":{{ boleto.descricao|tojson }}},\n    {\"type\":\"Caption\",\"value\":{{ (\"Vencimento: \" ~ boleto.vencimento)|tojson }}}\n   ]},\n   {\"type\":\"Title\",\"value\":{{ boleto.valor|tojson }}}\n  ]},\n  {% if not loop.last %}{\"type\":\"Divider\"},{% endif %}\n  {% endfor %}\n  {\"type\":\"Divider\"},\n  {\"type\":\"Row\",\"children\":[\n   {\"type\":\"Text\",\"value\":\"Total pendente\"},\n   {\"type\":\"Title\",\"value\":{{ total|tojson }}}\n  ]}\n ]\n}"
 }

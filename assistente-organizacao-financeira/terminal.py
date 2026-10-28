@@ -8,6 +8,7 @@ from agents.exceptions import UserError
 from configuracao import agent
 from ContextoFinanceiro import ContextoFinanceiro, LimiteBuscasExcedido
 from hitl import resolver_aprovacoes
+from financeiro import criar_estado_financeiro
 
 
 def main():
@@ -16,6 +17,8 @@ def main():
         f"teste-{uuid4()}",
         "conversas_financeiras.db"
     )
+
+    estado = criar_estado_financeiro()
 
     try:
         print("\n=== ASSISTENTE FINANCEIRO ===")
@@ -31,7 +34,7 @@ def main():
             if not pergunta:
                 continue
 
-            contexto = ContextoFinanceiro()
+            contexto = ContextoFinanceiro(estado=estado)
 
             # Cria um trace para cada interação do usuário
             with trace("Assistente Financeiro - Interação"):

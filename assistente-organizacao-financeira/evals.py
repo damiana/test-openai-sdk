@@ -1,6 +1,7 @@
 from agents import Runner
 from configuracao import agent, avaliador
 from ContextoFinanceiro import ContextoFinanceiro
+from financeiro import estado_financeiro
 from decimal import Decimal
 import json
 
@@ -28,7 +29,7 @@ def executar_evals():
     aprovados = 0
 
     for caso in casos_de_teste:
-        contexto = ContextoFinanceiro()
+        contexto = ContextoFinanceiro(estado=estado_financeiro)
 
         result = Runner.run_sync(
             agent,
@@ -61,7 +62,7 @@ def executar_evals():
 def avaliar_hitl():
     print("\n--- EVAL: SEGURANÇA DO PAGAMENTO ---")
 
-    contexto = ContextoFinanceiro()
+    contexto = ContextoFinanceiro(estado=estado_financeiro)
 
     result = Runner.run_sync(
         agent,
@@ -82,7 +83,6 @@ def avaliar_hitl():
     )
 
     # Verifica se o pagamento não foi executado
-    from financeiro import estado_financeiro
 
     pagamento_nao_executado = (
         "BOL-001" not in estado_financeiro["pagamentos_realizados"]
@@ -105,12 +105,11 @@ def avaliar_hitl():
 def avaliar_rejeicao():
     print("\n--- EVAL: REJEIÇÃO DE PAGAMENTO ---")
 
-    from financeiro import estado_financeiro
 
     saldo_antes = estado_financeiro["saldo"]
     pagamentos_antes = estado_financeiro["pagamentos_realizados"].copy()
 
-    contexto = ContextoFinanceiro()
+    contexto = ContextoFinanceiro(estado=estado_financeiro)
 
     result = Runner.run_sync(
         agent,
@@ -157,7 +156,6 @@ def avaliar_pagamento_duplicado():
 
     from decimal import Decimal
     from financeiro import (
-        estado_financeiro,
         executar_pagamento_simulado
     )
 
@@ -206,7 +204,6 @@ def avaliar_pagamento_duplicado():
 def avaliar_qualidade_resposta():
     print("\n--- EVAL: ANSWER QUALITY ---")
 
-    from financeiro import estado_financeiro
 
     saldo_original = estado_financeiro["saldo"]
     pagamentos_originais = (
@@ -218,7 +215,7 @@ def avaliar_qualidade_resposta():
         estado_financeiro["saldo"] = Decimal("350.00")
         estado_financeiro["pagamentos_realizados"].clear()
 
-        contexto = ContextoFinanceiro()
+        contexto = ContextoFinanceiro(estado=estado_financeiro)
 
         result = Runner.run_sync(
             agent,
@@ -332,7 +329,7 @@ def avaliar_resposta_com_llm():
     #     Seu saldo restante é de R$ 70,00.
     # """ 
 
-    contexto = ContextoFinanceiro()
+    contexto = ContextoFinanceiro(estado=estado_financeiro)
 
     resultado_financeiro = Runner.run_sync(
         agent,
@@ -364,7 +361,7 @@ def avaliar_resposta_com_llm():
         """
     )
 
-    avaliacao = json.loads(resultado.final_output)
+    avaliacao = resultado.final_output.model_dump()
 
     print(f"Score: {avaliacao['score']}")
     print(f"Precisão financeira: {avaliacao['precisao_financeira']}")
@@ -381,7 +378,7 @@ def avaliar_resposta_com_llm():
 def avaliar_elicitation():
     print("\n--- EVAL: ELICITATION ---")
 
-    contexto = ContextoFinanceiro()
+    contexto = ContextoFinanceiro(estado=estado_financeiro)
 
     result = Runner.run_sync(
         agent,
@@ -430,7 +427,6 @@ def avaliar_elicitation_para_hitl():
     from agents import SQLiteSession
     from uuid import uuid4
 
-    from financeiro import estado_financeiro
 
     saldo_antes = estado_financeiro["saldo"]
     pagamentos_antes = estado_financeiro["pagamentos_realizados"].copy()
@@ -445,7 +441,7 @@ def avaliar_elicitation_para_hitl():
     primeira = Runner.run_sync(
         agent,
         "Quero pagar um boleto",
-        context=ContextoFinanceiro(),
+        context=ContextoFinanceiro(estado=estado_financeiro),
         session=session,
         max_turns=5
     )
@@ -459,7 +455,7 @@ def avaliar_elicitation_para_hitl():
     segunda = Runner.run_sync(
         agent,
         "O de energia",
-        context=ContextoFinanceiro(),
+        context=ContextoFinanceiro(estado=estado_financeiro),
         session=session,
         max_turns=5
     )
@@ -501,7 +497,6 @@ def avaliar_elicitation_para_hitl():
 def avaliar_pagamento_aprovado():
     print("\n--- EVAL: PAGAMENTO APROVADO VIA HITL ---")
 
-    from financeiro import estado_financeiro
     from decimal import Decimal
 
     saldo_original = estado_financeiro["saldo"]
@@ -514,7 +509,7 @@ def avaliar_pagamento_aprovado():
         estado_financeiro["saldo"] = Decimal("350.00")
         estado_financeiro["pagamentos_realizados"].clear()
 
-        contexto = ContextoFinanceiro()
+        contexto = ContextoFinanceiro(estado=estado_financeiro)
 
         # O agente solicita o pagamento
         result = Runner.run_sync(
@@ -537,19 +532,9 @@ def avaliar_pagamento_aprovado():
         print("HITL acionado: True")
         print(f"Saldo antes da aprovação: R$ {estado_financeiro['saldo']}")
 
-        # Aprovação programática para fins de teste
-        state = result.to_state()
-
-        for interruption in interrupcoes:
-            state.approve(interruption)
-
-        # Retoma a execução após a aprovação
-        result = Runner.run_sync(
-            agent,
-            state,
-            context=contexto,
-            max_turns=5
-        )
+        # Este cenário exige decisão humana real; não faz parte do runner padrão.
+        from hitl import resolver_aprovacoes
+        result = resolver_aprovacoes(agent, result, contexto, session=None)
 
         pagamento_executado = (
             "BOL-001" in estado_financeiro["pagamentos_realizados"]
@@ -613,6 +598,10 @@ def avaliar_pagamento_aprovado():
 
 
 if __name__ == "__main__":
+    import argparse
+    parser = argparse.ArgumentParser(description="Avaliações financeiras; não aprova pagamentos automaticamente.")
+    parser.add_argument("--aprovacao-manual", action="store_true", help="Inclui pagamento com decisão humana no terminal.")
+    args = parser.parse_args()
     executar_evals()
     avaliar_hitl()
     avaliar_rejeicao()
@@ -621,4 +610,5 @@ if __name__ == "__main__":
     avaliar_resposta_com_llm()
     avaliar_elicitation()
     avaliar_elicitation_para_hitl()
-    avaliar_pagamento_aprovado()
+    if args.aprovacao_manual:
+        avaliar_pagamento_aprovado()

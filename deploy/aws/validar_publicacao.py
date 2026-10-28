@@ -9,13 +9,11 @@ ROOT = Path(__file__).resolve().parents[2]
 
 def main():
     service = json.loads((ROOT / '.deploy/aws-service.json').read_text())
-    deployment = json.loads((ROOT / '.deploy/aws-deployment.json').read_text())
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--local', action='store_true', help='Testa somente http://127.0.0.1:18080')
     args = parser.parse_args()
     base = 'http://127.0.0.1:18080' if args.local else service['url'].rstrip('/')
     transport = 'HTTP local' if args.local else 'HTTPS público'
-    code = deployment['containers']['finai']['environment']['DEMO_ACCESS_CODE']
 
     def request(path, payload=None, token=None, headers=None):
         h = {'Content-Type': 'application/json', **(headers or {})}
@@ -38,7 +36,7 @@ def main():
             return json.loads(content)
 
     def create_session():
-        return request('/session', {}, headers={'X-Demo-Code': code})['token']
+        return request('/session', {})['token']
 
     def message(text, token, thread_id=None):
         params = {'input': {'content': [{'type': 'input_text', 'text': text}],
